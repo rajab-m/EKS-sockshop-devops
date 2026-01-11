@@ -11,6 +11,6 @@ This setup demonstrates best practices for deploying a microservices application
 
 ## Project Structure
 
-/sock-shop-dev # Development environment deployments and configs
-/sock-shop-staging # Staging environment deployments and configs
-/sock-shop-terraform # Terraform IaC for provisioning AWS infrastructure
+- sock-shop-dev # Development environment deployments and configs
+- sock-shop-staging # Staging environment deployments and configs
+- sock-shop-terraform # Terraform IaC for provisioning AWS infrastructure
