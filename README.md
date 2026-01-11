@@ -34,6 +34,7 @@ Before using this repository, you should have:
    terraform apply
    ```
 2. **Deploy to dev environment**
+   
   the dev environment consists of three options:
 - docker compose
   ```
