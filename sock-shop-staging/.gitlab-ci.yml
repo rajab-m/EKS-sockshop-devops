@@ -1,0 +1,102 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+      when: always
+    - when: never
+
+
+variables:
+  NAMESPACE: sock-shop
+  DEPLOY_MODE: helm       # k8s or helm
+default:
+  tags:
+    - sock-shop   # shell executor on k8s node
+
+stages:
+  - deploy
+  - test
+  - cleanup
+
+
+
+# =========================================================
+# Kubernetes Deploy (EKS k8s)
+# =========================================================
+
+.setup-kubeconfig: &setup-kubeconfig
+  - rm -rf .kube
+  - mkdir -p .kube
+  - cat $KUBE_CONFIG > .kube/config
+  - export KUBECONFIG=$(pwd)/.kube/config
+  - kubectl config get-contexts
+  - kubectl config use-context $CLUSTER_ARN  # the aws cluster
+  - kubectl config get-contexts
+
+before_script:
+  - echo "Set AWS CLI profile"
+  - *setup-kubeconfig
+  # Set AWS CLI profile 
+  - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+  - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+  - aws configure set region $AWS_DEFAULT_REGION
+
+deploy-k8s-manifests:
+  stage: deploy
+  rules:
+    - if: '$DEPLOY_MODE == "k8s"'
+  script:
+    - echo "the branch is $CI_COMMIT_BRANCH and the deploy method is $DEPLOY_MODE"
+    - kubectl apply -f kubernetes/manifests/namespace.yaml
+    - kubectl apply -f $RDS_SECRET_FILE
+    - kubectl apply -f kubernetes/manifests/
+    - kubectl wait --for=condition=ready --all deployments -n $NAMESPACE --timeout=7m
+
+deploy-helm:
+  stage: deploy
+  rules:
+    - if: '$DEPLOY_MODE == "helm"'
+  script:
+    - echo "the branch is $CI_COMMIT_BRANCH and the deploy method is $DEPLOY_MODE"
+    - kubectl apply -f kubernetes/manifests/namespace.yaml
+    - kubectl apply -f $RDS_SECRET_FILE
+    - helm install sockshop ./sock-shop-helm/ --values ./sock-shop-helm/values.yaml --namespace sock-shop --create-namespace
+    - kubectl wait --for=condition=available --all deployments -n $NAMESPACE --timeout=7m
+
+# =========================================================
+# Kubernetes Tests (shared for k8s + helm)
+# =========================================================
+
+k8s-healthcheck:
+  stage: test
+  script:
+    - kubectl apply -n $NAMESPACE -f kubernetes/health.yaml
+    - kubectl wait --for=condition=complete job/healthcheck -n $NAMESPACE --timeout=3m
+    - kubectl logs job/healthcheck -n $NAMESPACE
+    - curl https://www.sockshop.cloud-ip.cc/
+
+k8s-e2e:
+  stage: test
+  needs: [k8s-healthcheck]
+  script:
+    - kubectl apply -n $NAMESPACE -f kubernetes/end2end.yaml
+    - kubectl wait --for=condition=complete job/sockshop-e2e -n $NAMESPACE --timeout=5m
+    - kubectl logs job/sockshop-e2e -n $NAMESPACE
+
+# =========================================================
+# Cleanup (k8s)
+# =========================================================
+
+cleanup-k8s:
+  stage: cleanup
+  when: always
+  script:
+    - |
+      if [ "$DEPLOY_MODE" = "helm" ]; then
+        echo "Helm deployment detected, uninstalling chart..."
+        helm uninstall sockshop -n $NAMESPACE
+        kubectl delete namespace $NAMESPACE --ignore-not-found   # important to delete secrets and tests, helm will not delete them
+      else
+        echo "Raw k8s manifests detected, deleting namespace..."
+        kubectl delete namespace $NAMESPACE --ignore-not-found
+      fi
+

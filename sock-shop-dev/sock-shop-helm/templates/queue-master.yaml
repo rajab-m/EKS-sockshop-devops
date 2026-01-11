@@ -1,0 +1,111 @@
+{{- $name := "queue-master" -}}
+{{- $svc := index .Values "queue-master" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      containers:
+      - name: {{ $name }}
+        image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false"
+        ports:
+        - name: http 
+          containerPort: {{ $svc.service.containerPort }}
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+            add: ["NET_BIND_SERVICE"]
+        volumeMounts:
+        {{- if $svc.volumes.dockerSock }}
+        {{- end }}
+        - name: tmp
+          mountPath: /tmp
+        livenessProbe:
+          httpGet:
+            path: {{ $svc.probes.path }}
+            port: {{ $svc.service.containerPort }}
+          initialDelaySeconds: {{ $svc.probes.livenessInitialDelay }}
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: {{ $svc.probes.path }}
+            port: {{ $svc.service.containerPort }}
+          initialDelaySeconds: {{ $svc.probes.readinessInitialDelay }}
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+          successThreshold: 1
+        resources:
+          {{- toYaml $svc.resources | nindent 10 }}
+      volumes:
+      {{- if $svc.volumes.dockerSock }}
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      {{- end }}
+      - name: tmp
+        emptyDir:
+          medium: Memory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+  - name: http
+    port: {{ $svc.service.port }}
+    targetPort: {{ $svc.service.containerPort }}
+---
+{{- if $svc.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $name }}-hpa
+  namespace: {{ .Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}
+  minReplicas: {{ $svc.autoscaling.minReplicas }}
+  maxReplicas: {{ $svc.autoscaling.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ $svc.autoscaling.targetCPU }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ $svc.autoscaling.targetMemory }}
+{{- end }}

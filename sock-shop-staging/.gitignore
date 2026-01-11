@@ -1,0 +1,10 @@
+# Kubernetes secrets
+*.secret.yaml
+*-secret.yaml
+# Sensitive files
+*.pem
+
+# Editor / IDE files
+*.swp
+*.idea/
+*.vscode/

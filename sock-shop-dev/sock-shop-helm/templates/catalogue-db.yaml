@@ -1,0 +1,47 @@
+{{- $name := "catalogue-db" -}}
+{{- $svc := index .Values "catalogue-db" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      containers:
+      - name: {{ $name }}
+        image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"
+        env:
+        - name: MYSQL_ALLOW_EMPTY_PASSWORD
+          value: "true"
+        - name: MYSQL_DATABASE
+          value: socksdb
+        ports:
+        - name: mysql      
+          containerPort: 3306
+        resources:
+          {{- toYaml $svc.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+  - name: mysql    
+    port: {{ $svc.service.port }}
+    targetPort: 3306

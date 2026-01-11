@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: healthcheck
+  namespace: sock-shop
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: healthcheck
+        image: curlimages/curl:8.5.0
+        command:
+        - sh
+        - -c
+        - |
+          services="carts orders user catalogue shipping payment queue-master"
+          namespace="sock-shop"
+
+          echo "Service health status:"
+          echo "----------------------"
+
+          fail=false
+
+          for s in $services; do
+            url="http://${s}.${namespace}.svc.cluster.local/health"
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+
+            if [ "$code" = "200" ]; then
+              echo "$s : OK (200)"
+            else
+              echo "$s : FAIL ($code)"
+              fail=true
+            fi
+          done
+
+          echo "----------------------"
+
+          if [ "$fail" = true ]; then
+            echo "Some services are unhealthy!"
+            exit 1
+          else
+            echo "All services healthy!"
+            exit 0
+          fi

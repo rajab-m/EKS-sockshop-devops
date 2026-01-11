@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db
+  namespace: sock-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db
+  template:
+    metadata:
+      labels:
+        app: user-db
+    spec:
+      containers:
+        - name: user-db
+          image: weaveworksdemos/user-db:0.4.0
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN","SETGID","SETUID"]
+          resources:
+            limits:
+              cpu: 300m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-db
+  namespace: sock-shop
+spec:
+  selector:
+    app: user-db
+  ports:
+    - port: 27017

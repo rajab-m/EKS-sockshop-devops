@@ -1,0 +1,47 @@
+{{- $name := "carts-db" -}}
+{{- $svc := index .Values "carts-db" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ $svc.replicas }}  
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      containers:
+      - name: {{ $name }}
+        image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"  
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+            add: ["CHOWN","SETGID","SETUID"]
+        resources:
+          {{- toYaml $svc.resources | nindent 10 }}  
+      volumes:
+      - name: tmp
+        emptyDir:
+          medium: Memory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+  - port: {{ $svc.service.port }}  
+    targetPort: 27017
+    name: mongodb

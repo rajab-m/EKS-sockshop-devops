@@ -1,0 +1,14 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.terraform.lock.hcl
+.terraform.lock.hcl
+# Sensitive files
+*.pem
+
+# Editor / IDE files
+*.swp
+*.idea/
+*.vscode/
+

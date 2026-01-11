@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: grafana-import-dashboards
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: import-dashboards
+spec:
+  backoffLimit: 6
+  completionMode: NonIndexed
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: import-dashboards
+    spec:
+      containers:
+      - name: grafana-import-dashboards
+        image: giantswarm/tiny-tools
+        imagePullPolicy: Always
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - |
+            # Import datasources
+            for file in *-datasource.json; do
+              if [ -e "$file" ]; then
+                echo "Importing $file" &&
+                curl --silent --fail --show-error \
+                  --request POST http://admin:${GRAFANA_PASSWORD}@prometheus-grafana.monitoring.svc.cluster.local:80/api/datasources \
+                  --header "Content-Type: application/json" \
+                  --header "Accept: application/json" \
+                  --data-binary "@$file" ;
+                echo "" ;
+              fi
+            done
+
+            # Import dashboards
+            for file in *-dashboard.json; do
+              if [ -e "$file" ]; then
+                echo "Importing $file" &&
+                curl --silent --fail --show-error \
+                  --request POST http://admin:${GRAFANA_PASSWORD}@prometheus-grafana.monitoring.svc.cluster.local:80/api/dashboards/import \
+                  --header "Content-Type: application/json" \
+                  --header "Accept: application/json" \
+                  --data-binary "@$file" ;
+                echo "" ;
+              fi
+            done
+        env:
+          - name: GRAFANA_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: grafana-secret
+                key: password
+        volumeMounts:
+          - mountPath: /opt/grafana-import-dashboards
+            name: config-volume
+        workingDir: /opt/grafana-import-dashboards
+      restartPolicy: Never
+      volumes:
+        - name: config-volume
+          configMap:
+            name: grafana-import-dashboards

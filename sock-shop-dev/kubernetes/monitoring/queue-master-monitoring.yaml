@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: queue-master-metrics
+  namespace: sock-shop
+  labels:
+    release: prometheus      
+spec:
+  selector:
+    matchLabels:
+      app: queue-master
+  namespaceSelector:
+    matchNames:
+      - sock-shop
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

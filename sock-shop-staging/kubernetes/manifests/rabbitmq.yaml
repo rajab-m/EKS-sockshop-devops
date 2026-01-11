@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: sock-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.6.8
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN","SETGID","SETUID","DAC_OVERRIDE"]
+          resources:
+            limits:
+              cpu: 300m
+              memory: 128Mi
+            requests:
+              cpu: 20m
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: sock-shop
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - port: 5672

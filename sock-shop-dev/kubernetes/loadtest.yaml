@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadtest     # better practice to isolate the test nsamspace from the app
+  namespace: loadtest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: loadtest
+  template:
+    metadata:
+      labels:
+        app: loadtest
+    spec:
+      containers:
+        - name: user-sim
+          image: weaveworksdemos/load-test:0.1.1
+          command: ["/bin/sh"]
+          # cont. loop to test for long time, useful to determine resources requests and limits
+          args: ["-c", "while true; do locust --host http://front-end.sock-shop.svc.cluster.local -f /config/locustfile.py --clients 200 --hatch-rate 10 --num-request 100 --no-web; done"]
+
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

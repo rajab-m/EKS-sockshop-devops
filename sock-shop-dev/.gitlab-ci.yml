@@ -1,0 +1,126 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: always
+    - when: never
+
+variables:
+  COMPOSE_FILE: ./docker-compose/docker-compose.yml
+  COMPOSE_PROJECT_NAME: sock-shop
+  NAMESPACE: sock-shop
+  DEPLOY_MODE: helm       # k3s or helm
+default:
+  tags:
+    - sock-shop   # shell executor on k3s node
+
+stages:
+  - docker
+  - docker-test
+  - docker-cleanup
+  - deploy
+  - test
+  - cleanup
+
+# =========================================================
+# Docker Compose (local validation)
+# =========================================================
+
+docker-compose-up:
+  stage: docker
+  script:
+    - docker info
+    - docker compose -p $COMPOSE_PROJECT_NAME -f $COMPOSE_FILE up -d
+    - sleep 120
+
+docker-healthcheck:
+  stage: docker-test
+  needs: [docker-compose-up]
+  script:
+    - python3 -u ./docker-compose/healthcheck.py --network ${COMPOSE_PROJECT_NAME}_default
+
+docker-e2e:
+  stage: docker-test
+  needs: [docker-healthcheck]
+  script:
+    - ./docker-compose/e2e-test.sh
+
+docker-cleanup:
+  stage: docker-cleanup
+  when: always
+  script:
+    - docker compose -p $COMPOSE_PROJECT_NAME -f $COMPOSE_FILE down --volumes --remove-orphans
+
+# =========================================================
+# Kubernetes Deploy (k3s)
+# =========================================================
+
+.setup-kubeconfig: &setup-kubeconfig
+  - rm -rf .kube
+  - mkdir -p .kube
+  - cat $KUBE_CONFIG > .kube/config
+  - export KUBECONFIG=$(pwd)/.kube/config
+  - kubectl config use-context default
+  - kubectl config get-contexts
+
+deploy-k3s-manifests:
+  stage: deploy
+  rules:
+    - if: '$DEPLOY_MODE == "k3s"'
+  script:
+    - *setup-kubeconfig
+    - kubectl apply -f kubernetes/manifests/namespace.yaml
+    - kubectl apply -f $MYSQL_SECRET_FILE
+    - kubectl apply -f kubernetes/manifests/
+    - kubectl wait --for=condition=ready --all deployments -n $NAMESPACE --timeout=5m
+
+deploy-helm:
+  stage: deploy
+  rules:
+    - if: '$DEPLOY_MODE == "helm"'
+  script:
+    - *setup-kubeconfig
+    - kubectl apply -f kubernetes/manifests/namespace.yaml
+    - kubectl apply -f $MYSQL_SECRET_FILE
+    - helm install sockshop ./sock-shop-helm/ --values ./sock-shop-helm/values.yaml --namespace sock-shop --create-namespace
+    - kubectl wait --for=condition=available --all deployments -n $NAMESPACE --timeout=5m
+
+# =========================================================
+# Kubernetes Tests (shared for k3s + helm)
+# =========================================================
+
+k3s-healthcheck:
+  stage: test
+  script:
+    - *setup-kubeconfig
+    - kubectl apply -n $NAMESPACE -f kubernetes/health.yaml
+    - kubectl wait --for=condition=complete job/healthcheck -n $NAMESPACE --timeout=3m
+    - kubectl logs job/healthcheck -n $NAMESPACE
+
+k3s-e2e:
+  stage: test
+  needs: [k3s-healthcheck]
+  script:
+    - *setup-kubeconfig
+    - kubectl apply -n $NAMESPACE -f kubernetes/end2end.yaml
+    - kubectl wait --for=condition=complete job/sockshop-e2e -n $NAMESPACE --timeout=5m
+    - kubectl logs job/sockshop-e2e -n $NAMESPACE
+
+# =========================================================
+# Cleanup (k3s)
+# =========================================================
+
+cleanup-k3s:
+  stage: cleanup
+  when: always
+  script:
+    - *setup-kubeconfig
+    - |
+      if [ "$DEPLOY_MODE" = "helm" ]; then
+        echo "Helm deployment detected, uninstalling chart..."
+        helm uninstall sockshop -n $NAMESPACE
+        kubectl delete namespace $NAMESPACE --ignore-not-found   # important to delete secrets and tests, helm will not delete them
+      else
+        echo "Raw k3s manifests detected, deleting namespace..."
+        kubectl delete namespace $NAMESPACE --ignore-not-found
+      fi
+

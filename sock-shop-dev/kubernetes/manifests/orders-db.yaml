@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-db
+  namespace: sock-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-db
+  template:
+    metadata:
+      labels:
+        app: orders-db
+    spec:
+      containers:
+        - name: orders-db
+          image: mongo:3.4
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN","SETGID","SETUID"]
+          resources:
+            limits:
+              cpu: 300m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-db
+  namespace: sock-shop
+spec:
+  selector:
+    app: orders-db
+  ports:
+    - port: 27017

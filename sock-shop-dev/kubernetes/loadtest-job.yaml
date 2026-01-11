@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: loadtest     # better practice to isolate the test nsamspace from the app
+  namespace: loadtest
+spec:
+  backoffLimit: 0           # don’t retry on failure
+  template:
+    spec:
+      restartPolicy: Never  # important: pod won’t restart after completion, just a short time load test
+      containers:
+        - name: user-sim
+          image: weaveworksdemos/load-test:0.1.1
+          command: ["/bin/sh"]
+          # small test for once
+          args: ["-c", "locust --host http://front-end.sock-shop.svc.cluster.local -f /config/locustfile.py --clients 50 --hatch-rate 5 --num-request 100 --no-web"]
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

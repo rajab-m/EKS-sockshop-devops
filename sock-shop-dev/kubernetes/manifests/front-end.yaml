@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-end
+  namespace: sock-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front-end
+  template:
+    metadata:
+      labels:
+        app: front-end
+    spec:
+      containers:
+        - name: front-end
+          image: weaveworksdemos/front-end:0.3.12
+          ports:
+            - containerPort: 8079
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          
+          resources:
+            limits:
+              cpu: 300m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-end
+  namespace: sock-shop
+spec:
+  selector: 
+    app: front-end  
+  ports:
+    - port: 80           
+      targetPort: 8079   
+
