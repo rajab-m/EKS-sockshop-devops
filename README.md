@@ -73,7 +73,9 @@ Health check and end-to-end tests are implemented in the CI pipeline and defined
 setting the AWS CLI profile, the Health check and end-to-end tests are implemented in the CI pipeline and defined in [.gitlab-ci.yml](./sock-shop-staging/.gitlab-ci.yml).
 
 ## 4. Monitoring
+
    to set the moitoring environment do the following:
+   
 **Installing kube-prometheus-stack with Helm**
    ```
    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
