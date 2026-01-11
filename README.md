@@ -102,7 +102,7 @@ kubectl get svc -n monitoring
 ```
 and then go to the localhost:GRAFANA_PORT to monitor the services.
 
-**On the staging environment, the EKS nodes are private and are accessible only via bastion tunnel -bote that you need to pass the key name to connect to the bastion:
+**On the staging environment, the EKS nodes are private and are accessible only via bastion tunnel -bote that you need to pass the key name to connect to the bastion:**
 ```
 ssh -i sock-shop_keypair.pem -L 3301:$NODE_IN_CLUSTER:GRAFANA_PORT -L 9090:$NODE_IN_CLUSTER:PROMETHEUS_PORT ec2-user@BASTION_IP
 ```
