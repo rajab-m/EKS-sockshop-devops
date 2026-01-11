@@ -86,7 +86,7 @@ setting the AWS CLI profile, the Health check and end-to-end tests are implement
    - **create and apply a secret called grafana-secret.yaml contains the password of grafana service in the monitoring namespace**
    ``
    kubectl apply sock-shop-dev/kubernetes/monitoring/grafana-secret.yaml
-   - **import the sock-shop daschboards by applying in order:**
+   **- import the sock-shop daschboards by applying in order:**
    ```
    kubectl apply sock-shop-dev/kubernetes/monitoring/dashboards/20-grafana-configmap.yaml
    kubectl apply sock-shop-dev/kubernetes/monitoring/dashboards/23-grafana-import-dash-batch.yaml
