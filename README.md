@@ -13,4 +13,44 @@ This setup demonstrates best practices for deploying a microservices application
 
 - sock-shop-dev # Development environment deployments and configs
 - sock-shop-staging # Staging environment deployments and configs
-- sock-shop-terraform # Terraform IaC for provisioning AWS infrastructure
+- sock-shop-terraform # Terraform IaC for provisioning AWS infrastructure.
+
+  
+## Prerequisites
+
+Before using this repository, you should have:
+
+- AWS account and AWS CLI configured  
+- Terraform installed  
+- kubectl installed and configured  
+- Gitlab repository to use CI/CD pipelines
+
+## Getting Started
+
+1. **Provision infrastructure**  
+   ```
+   cd sock-shop-terraform
+   terraform init
+   terraform apply
+   ```
+2. **Deploy to dev environment**
+  the dev environment consists of three options:
+- docker compose
+  ```
+  cd sock-shop-dev/docker-compose
+  docker compose up -d
+  ```
+- Kubernetes manifests:
+  ```
+  cd sock-shop-staging/
+  kubectl apply -f kubernetes/manifests/namespace.yaml
+  kubectl apply -f kubernetes/manifests/
+  ```
+- helm chart:
+  ```
+  kubectl apply -f kubernetes/manifests/namespace.yaml
+  helm install sockshop ./sock-shop-helm/ --values ./sock-shop-helm/values.yaml --namespace sock-shop --create-namespace
+  ```
+for using the health check test and the end to end test, refer please to the pipeline https://github.com/rajab-m/EKS-sockshop-devops/blob/2d9a3e722560fe2585676374dfc26bc8e34f76ec/sock-shop-dev/.gitlab-ci.yml
+
+
