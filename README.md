@@ -52,6 +52,7 @@ Before using this repository, you should have:
   kubectl apply -f kubernetes/manifests/namespace.yaml
   helm install sockshop ./sock-shop-helm/ --values ./sock-shop-helm/values.yaml --namespace sock-shop --create-namespace
   ```
-for using the health check test and the end to end test, refer please to the pipeline https://github.com/rajab-m/EKS-sockshop-devops/blob/2d9a3e722560fe2585676374dfc26bc8e34f76ec/sock-shop-dev/.gitlab-ci.yml
+Health check and end-to-end tests are implemented in the CI pipeline defined in [.gitlab-ci.yml](./sock-shop-dev/.gitlab-ci.yml).
+
 
 
