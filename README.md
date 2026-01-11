@@ -67,6 +67,7 @@ Health check and end-to-end tests are implemented in the CI pipeline and defined
 **helm chart:**
   ```
   kubectl apply -f kubernetes/manifests/namespace.yaml
+  kubectl apply -f $RDS_SECRET_FILE
   helm install sockshop ./sock-shop-helm/ --values ./sock-shop-helm/values.yaml --namespace sock-shop --create-namespace
   ```
 
