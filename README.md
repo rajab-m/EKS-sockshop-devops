@@ -108,4 +108,7 @@ ssh -i sock-shop_keypair.pem -L 3301:$NODE_IN_CLUSTER:GRAFANA_PORT -L 9090:$NODE
 **now grafana service will be exposed on port 3301 on local host and prometheus on 9090**
 **note that the bastion public ip will be printed after applying the terraform deployment as an output**
 ## Screenshots:
+![Alt text](sock-shop-dev/kubernetes/monitoring/screenshots/grafana-nginx.png)
+![Alt text](sock-shop-dev/kubernetes/monitoring/screenshots/sock-shop-performance.png)
+![Alt text](sock-shop-dev/kubernetes/monitoring/screenshots/sockshop-resources.png)
 
