@@ -1,6 +1,6 @@
 # EKS-Sockshop-DevOps
 
-This repository contains automation and infrastructure code for deploying the **Sock Shop microservices demo** on **AWS Elastic Kubernetes Service (EKS)** with development, staging, and CI/CD support.
+This repository contains automation and infrastructure code for deploying the **Sock Shop microservices demo (https://github.com/microservices-demo/microservices-demo)** on **AWS Elastic Kubernetes Service (EKS)** with development, staging, and CI/CD support.
 
 The project includes:
 
