@@ -56,6 +56,7 @@ Health check and end-to-end tests are implemented in the CI pipeline and defined
 ## 3. Deploy to staging environment
    
   the staging environment consists of two options:
+  
 **Kubernetes manifests:**
   ```
   cd sock-shop-staging/
