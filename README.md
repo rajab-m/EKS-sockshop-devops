@@ -85,16 +85,16 @@ setting the AWS CLI profile, the Health check and end-to-end tests are implement
    ```
 **create the service monitor for all service which have prometheus end points**
    ```
-   kubectl apply sock-shop-dev/kubernetes/monitoring/
+   kubectl apply -f sock-shop-dev/kubernetes/monitoring/
    ```
    **create and apply a secret called grafana-secret.yaml contains the password of grafana service in the monitoring namespace**
    ```
-   kubectl apply sock-shop-dev/kubernetes/monitoring/grafana-secret.yaml
+   kubectl apply -f sock-shop-dev/kubernetes/monitoring/grafana-secret.yaml
    ```
 **import the sock-shop dashboards by applying in order:**
    ```
-   kubectl apply sock-shop-dev/kubernetes/monitoring/dashboards/20-grafana-configmap.yaml
-   kubectl apply sock-shop-dev/kubernetes/monitoring/dashboards/23-grafana-import-dash-batch.yaml
+   kubectl apply -f sock-shop-dev/kubernetes/monitoring/dashboards/20-grafana-configmap.yaml
+   kubectl apply -f sock-shop-dev/kubernetes/monitoring/dashboards/23-grafana-import-dash-batch.yaml
    ```
 **On the dev environment check on which port the grafana service is exposed by running:**
 ```
