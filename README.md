@@ -32,6 +32,8 @@ Before using this repository, you should have:
    terraform init
    terraform apply
    ```
+![Alt text](sock-shop-dev/kubernetes/monitoring/screenshots/aws-arch-.jpg)
+
 ## 2. Deploy to dev environment
    
   the dev environment consists of three options:
