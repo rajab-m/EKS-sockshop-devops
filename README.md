@@ -95,14 +95,17 @@ setting the AWS CLI profile, the Health check and end-to-end tests are implement
    kubectl apply sock-shop-dev/kubernetes/monitoring/dashboards/20-grafana-configmap.yaml
    kubectl apply sock-shop-dev/kubernetes/monitoring/dashboards/23-grafana-import-dash-batch.yaml
    ```
-**on the dev environment check on which port the grafana service is exposed by running:**
+**On the dev environment check on which port the grafana service is exposed by running:**
 ```
 kubectl get svc -n monitoring
 ```
-and then go to the localhost:GRAFANA_PORT to monitor the services
-**on the staging environment, the EKS nodes are private and are accessible only via bastion tunnel -bote that you need to pass the key name to connect to the bastion:
+and then go to the localhost:GRAFANA_PORT to monitor the services.
+
+**On the staging environment, the EKS nodes are private and are accessible only via bastion tunnel -bote that you need to pass the key name to connect to the bastion:
 ```
 ssh -i sock-shop_keypair.pem -L 3301:$NODE_IN_CLUSTER:GRAFANA_PORT -L 9090:$NODE_IN_CLUSTER:PROMETHEUS_PORT ec2-user@BASTION_IP
 ```
 **now grafana service will be exposed on port 3301 on local host and prometheus on 9090**
 **note that the bastion public ip will be printed after applying the terraform deployment as an output**
+## Screenshots:
+
